@@ -3,6 +3,7 @@ require("dotenv").config();
 // const config = require("./config.json");
 const mongoose = require("mongoose");
 const CombinedModel = require("./models/user.model");
+const Department = require("./models/dsr.model")
 const express = require("express");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
@@ -141,7 +142,7 @@ app.post("/login", async (req, res) => {
     });
   }
 
-  const userInfo = await User.findOne({
+  const userInfo = await CombinedModel.findOne({
     email: email,
   });
 
@@ -176,6 +177,96 @@ app.post("/login", async (req, res) => {
 });
 
 //Add dsr entries
+// Define the add-entry route
+app.post('/add-entry', async (req, res) => {
+  try {
+    const { deptName, labName, sectionName, dsrEntry } = req.body;
+
+    // Find the department by name
+    const dept = await Dept.findOne({ deptName });
+
+    if (!dept) {
+      return res.status(404).json({ message: 'Department not found' });
+    }
+
+    // Find the lab by name
+    const lab = dept.sections.find((lab) => lab.labName === labName);
+
+    if (!lab) {
+      return res.status(404).json({ message: 'Lab not found' });
+    }
+
+    // Find the section by name
+    const section = lab.sections.find((sec) => sec.sectionName === sectionName);
+
+    if (!section) {
+      return res.status(404).json({ message: 'Section not found' });
+    }
+
+    // Add the new DSR entry to the section's dsrEntries array
+    section.dsrEntries.push(dsrEntry);
+
+    // Save the updated department document
+    await dept.save();
+
+    res.status(200).json({ message: 'DSR entry added successfully', dept });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+//Add dsr entries
+app.post('/add-dsr-entry/department/:deptName/lab/:labName/section/:sectionName/dsr', async (req, res) => {
+const { deptName, labName, sectionName } = req.params;
+  const dsrData = req.body;
+
+  try {
+    // Find the relevant department
+    const department = await Department.findOne({ deptName });
+    if (!department) {
+      return res.status(404).json({ error: 'Department not found' });
+    }
+
+    // Find the relevant lab within the department
+    const lab = department.labs.find(lab => lab.labName === labName);
+    if (!lab) {
+      return res.status(404).json({ error: 'Lab not found' });
+    }
+
+    // Find the relevant section within the lab
+    const section = lab.sections.find(section => section.sectionName === sectionName);
+    if (!section) {
+      return res.status(404).json({ error: 'Section not found' });
+    }
+
+    // Add the new DSR entry to the section
+    section.dsrEntries.push(dsrData);
+
+    // Save the updated department document
+    await department.save();
+
+    res.status(201).json({ message: 'DSR entry added successfully' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+//Add a department structure
+app.post('/create-department-structure', async (req, res) => {
+  const departmentData = req.body;
+
+  try {
+    const newDepartment = new Department(departmentData);
+    await newDepartment.save();
+    res.status(201).json({ message: 'Department structure created successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 
 const PORT = 5000;
 app.listen(PORT, function () {

@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
+// Define the DSR schema
 const dsrSchema = new Schema({
   srNo: {
     type: Number,
@@ -64,6 +65,33 @@ const dsrSchema = new Schema({
   }
 });
 
-const Dsr = mongoose.model('dsrSchema', dsrSchema);
+// Define the Section schema
+const sectionSchema = new Schema({
+  sectionName: {
+    type: String,
+    required: true,
+  },
+  dsrEntries: [dsrSchema],
+});
 
-module.exports = Dsr;
+// Define the Lab schema
+const labSchema = new Schema({
+  labName: {
+    type: String,
+    required: true,
+  },
+  sections: [sectionSchema],
+});
+
+// Define the Department schema
+const departmentSchema = new Schema({
+  deptName: {
+    type: String,
+    required: true,
+  },
+  labs: [labSchema],
+});
+
+const Department = mongoose.model('Department', departmentSchema);
+
+module.exports = Department;
